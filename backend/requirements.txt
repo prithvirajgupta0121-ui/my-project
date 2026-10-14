@@ -1,0 +1,17 @@
+# AEGIS backend runtime
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30
+websockets>=12
+SQLAlchemy>=2.0,<3
+pydantic>=2.7,<3
+pydantic-settings>=2.3
+python-multipart>=0.0.9
+argon2-cffi>=23.1
+cryptography>=42
+opencv-python-headless>=4.9
+numpy>=1.26
+reportlab>=4.1
+psutil>=5.9
+pillow>=10.3
+# PostgreSQL for larger deployments (set AEGIS_DATABASE_URL=postgresql+psycopg://...)
+# psycopg[binary]>=3.1

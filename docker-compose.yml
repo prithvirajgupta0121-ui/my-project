@@ -1,0 +1,53 @@
+# AEGIS AERIAL INTELLIGENCE
+#   Production build : docker compose up -d --build
+#   Offline demo     : docker compose --profile demo up --build aegis-demo
+# Bound to localhost by default — put a TLS reverse proxy in front for network access.
+services:
+  aegis:
+    build: .
+    image: aegis-aerial-intelligence:1.0.0
+    env_file: [.env]
+    environment:
+      AEGIS_ENV: production
+      AEGIS_DATA_DIR: /data
+      AEGIS_DEMO_MODE_ENABLED: "false"
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: ["aegis-data:/data"]
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    restart: unless-stopped
+
+  aegis-demo:
+    profiles: [demo]
+    build: .
+    image: aegis-aerial-intelligence:1.0.0
+    environment:
+      AEGIS_ENV: production
+      AEGIS_DATA_DIR: /data
+      AEGIS_DEMO_MODE_ENABLED: "true"
+      AEGIS_ONLINE_TILES_ENABLED: "false"
+    ports: ["127.0.0.1:8080:8000"]
+    volumes: ["aegis-demo-data:/data"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    network_mode: bridge
+
+  # Optional PostgreSQL for larger deployments:
+  #   set AEGIS_DATABASE_URL=postgresql+psycopg://aegis:${POSTGRES_PASSWORD}@db:5432/aegis
+  #   and add `psycopg[binary]` to backend/requirements.txt
+  db:
+    profiles: [postgres]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: aegis
+      POSTGRES_DB: aegis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}  # must be set in .env; postgres refuses to start without it
+    volumes: ["aegis-pg:/var/lib/postgresql/data"]
+    restart: unless-stopped
+
+volumes:
+  aegis-data:
+  aegis-demo-data:
+  aegis-pg:

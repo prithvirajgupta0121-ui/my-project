@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* ------------------------------------------------------------------ *
+ * AEGIS design tokens — restrained command-centre palette
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-void: #07090a;
+  --color-bg: #0a0d0b;
+  --color-panel: #0f1310;
+  --color-panel-2: #141a15;
+  --color-panel-3: #1b221c;
+  --color-line: #253027;
+  --color-line-2: #34413a;
+  --color-olive: #8a9c55;
+  --color-olive-dim: #56633a;
+  --color-olive-deep: #2c3520;
+  --color-amber: #d9a21b;
+  --color-amber-dim: #6e5412;
+  --color-red: #d4483f;
+  --color-red-dim: #5c201c;
+  --color-cyan: #5fb7c2;
+  --color-cyan-dim: #23474c;
+  --color-ink: #d5dbcf;
+  --color-ink-2: #a4ad9c;
+  --color-muted: #75806f;
+  --color-dim: #4c5549;
+
+  --font-sans: "Inter", "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+
+  --animate-sweep: sweep 4s linear infinite;
+  --animate-pulse-soft: pulse-soft 2.2s ease-in-out infinite;
+  --animate-scan: scan 2.4s linear infinite;
+  --animate-stream: stream 1.6s linear infinite;
+  --animate-feed-in: feed-in 0.45s ease-out;
+
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+  @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+  @keyframes stream { 0% { background-position: 0 0; } 100% { background-position: 24px 0; } }
+  @keyframes feed-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    margin: 0;
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    /* tactical coordinate grid */
+    background-image:
+      linear-gradient(rgba(138, 156, 85, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(138, 156, 85, 0.035) 1px, transparent 1px),
+      linear-gradient(rgba(138, 156, 85, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(138, 156, 85, 0.018) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  }
+  /* subtle scan lines (single fixed overlay — cheap) */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 3px);
+    z-index: 9999;
+  }
+  ::selection { background: var(--color-olive-dim); color: #fff; }
+  * { scrollbar-width: thin; scrollbar-color: var(--color-line-2) transparent; }
+  input, select, textarea, button { font: inherit; color: inherit; }
+  :focus-visible { outline: 1px solid var(--color-cyan); outline-offset: 1px; }
+}
+
+@layer components {
+  .mono { font-family: var(--font-mono); }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .panel {
+    position: relative;
+    background: linear-gradient(180deg, rgba(20, 26, 21, 0.92), rgba(13, 17, 14, 0.94));
+    border: 1px solid var(--color-line);
+  }
+  /* corner brackets */
+  .brackets::before, .brackets::after {
+    content: "";
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    pointer-events: none;
+    border-color: var(--color-olive-dim);
+  }
+  .brackets::before { top: -1px; left: -1px; border-top: 1px solid; border-left: 1px solid; }
+  .brackets::after { bottom: -1px; right: -1px; border-bottom: 1px solid; border-right: 1px solid; }
+
+  .field {
+    width: 100%;
+    background: var(--color-void);
+    border: 1px solid var(--color-line);
+    padding: 7px 9px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-ink);
+    transition: border-color 0.15s;
+  }
+  .field:focus { border-color: var(--color-olive); outline: none; }
+  .field[aria-invalid="true"] { border-color: var(--color-red); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid var(--color-line-2);
+    background: var(--color-panel-2);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--color-olive); color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: var(--color-olive-deep); border-color: var(--color-olive-dim); color: #e7eedb; }
+  .btn-primary:hover:not(:disabled) { background: #36421f; }
+  .btn-danger { border-color: var(--color-red-dim); color: #f0b3ae; }
+  .btn-ghost { background: transparent; border-color: transparent; }
+  .btn-sm { padding: 3px 8px; font-size: 10px; }
+
+  .table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .table th {
+    position: sticky; top: 0; z-index: 1;
+    text-align: left; font-weight: 500;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--color-muted); background: var(--color-panel-2);
+    padding: 7px 8px; border-bottom: 1px solid var(--color-line);
+  }
+  .table td { padding: 6px 8px; border-bottom: 1px solid rgba(37, 48, 39, 0.6); vertical-align: middle; }
+  .table tbody tr:hover { background: rgba(138, 156, 85, 0.05); }
+  .table tbody tr.selected { background: rgba(95, 183, 194, 0.08); box-shadow: inset 2px 0 0 var(--color-cyan); }
+
+  .stream-bar {
+    background-image: repeating-linear-gradient(90deg, rgba(95, 183, 194, 0.55) 0 6px, transparent 6px 12px);
+    background-size: 24px 100%;
+    animation: var(--animate-stream);
+  }
+}
+
+/* ---------------------------------------------------------------- Leaflet */
+.leaflet-container { background: #0b0f0c; font-family: var(--font-mono); }
+.leaflet-control-attribution { background: rgba(10, 13, 11, 0.8) !important; color: var(--color-muted) !important; font-size: 9px; }
+.leaflet-control-attribution a { color: var(--color-ink-2) !important; }
+.leaflet-bar a, .leaflet-bar a:hover { background: var(--color-panel-2); color: var(--color-ink); border-color: var(--color-line); }
+.leaflet-bar { border: 1px solid var(--color-line) !important; border-radius: 0 !important; }
+.leaflet-bar a { border-radius: 0 !important; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: rgba(12, 16, 13, 0.97); color: var(--color-ink); border: 1px solid var(--color-line-2); border-radius: 0; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+}
+.leaflet-popup-content { margin: 10px 12px; font-size: 11px; line-height: 1.5; }
+.leaflet-container a.leaflet-popup-close-button { color: var(--color-muted); }
+.leaflet-tooltip { background: rgba(10, 13, 11, 0.9); color: var(--color-ink); border: 1px solid var(--color-line-2); border-radius: 0; font-size: 10px; box-shadow: none; }
+.leaflet-tooltip::before { display: none; }
+
+.aegis-pulse {
+  position: absolute; inset: -6px; border-radius: 50%;
+  border: 1px solid currentColor; opacity: 0.8;
+  animation: marker-pulse 2.4s ease-out infinite;
+}
+@keyframes marker-pulse { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(1.8); opacity: 0; } }
+.map-grid-label { font-family: var(--font-mono); font-size: 9px; fill: rgba(138, 156, 85, 0.55); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+}
